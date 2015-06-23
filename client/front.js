@@ -1,10 +1,7 @@
-// Don't use var keyword for global variables. This will allow us to reference
-// and manipulate the collection throughout all of our project's files.
-PlayersList = new Mongo.Collection('players');
-
-console.log("Hello world!!");
+// Client Side Code
 
 if(Meteor.isClient) {
+  Meteor.subscribe('thePlayers');
   // this code only runs on the client
   Template.leaderboard.helpers({
     // helper functions go here
@@ -13,7 +10,7 @@ if(Meteor.isClient) {
       // By passing through a value of -1 we can sort in descending order
       // Highest score first
       // Then they will be sorted by name alphabetically. Score first, then name.
-      return PlayersList.find({createdBy: currentUserId}, {sort: {score: -1, name: 1}});
+      return PlayersList.find({}, {sort: {score: -1, name: 1}});
     },
     'otherHelperFunction': function(){
       return "Some other function"
@@ -32,23 +29,6 @@ if(Meteor.isClient) {
     }
   });
 
-  Template.addPlayerForm.events({
-    'submit form': function(){
-      // prevent default behavior
-      // prevent browser from refreshing when submit button hit.
-      event.preventDefault();
-      // event object grabs html element with name attribute set to playerName
-      var playerNameVar = event.target.playerName.value;
-      var currentUserId = Meteor.userId();
-      // insert data into PlayerList Collection/Table
-      PlayersList.insert({
-        name: playerNameVar,
-        score: 0,
-        createdBy: currentUserId
-      });
-    }
-  });
-
   Template.leaderboard.events({
     // events go here
     'click .player': function(){
@@ -60,20 +40,27 @@ if(Meteor.isClient) {
     },
     'click .increment': function(){
       var selectedPlayer = Session.get('selectedPlayer');
-      PlayersList.update(selectedPlayer, {$inc: {score: 5}});
+      Meteor.call('modifyPlayerScore', selectedPlayer, 5);
     },
     'click .decrement': function(){
       var selectedPlayer = Session.get('selectedPlayer');
-      PlayersList.update(selectedPlayer, {$inc: {score: -5}});
+      Meteor.call('modifyPlayerScore', selectedPlayer, -5);
     },
     'click .remove': function(){
       var selectedPlayer = Session.get('selectedPlayer');
-      PlayersList.remove(selectedPlayer);
+      Meteor.call('removePlayerData', selectedPlayer);
     }
   });
-}
 
-if(Meteor.isServer) {
-  // this code only runs on the server
-  console.log("Hello server");
+  Template.addPlayerForm.events({
+    'submit form': function(){
+      // prevent default behavior
+      // prevent browser from refreshing when submit button hit.
+      event.preventDefault();
+      // event object grabs html element with name attribute set to playerName
+      var playerNameVar = event.target.playerName.value;
+      // insert data into PlayerList Collection/Table
+      Meteor.call('insertPlayerData', playerNameVar);
+    }
+  });
 }
